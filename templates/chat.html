@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Interactive Chat Interface</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #f5f5f5;
+			margin: 0;
+			padding: 0;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			height: 100vh;
+		}
+
+		.container {
+			background-color: #fff;
+			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+			border-radius: 10px;
+			width: 80%;
+			max-width: 600px;
+			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			margin: 20px;
+			overflow-y: scroll;
+			height: 70vh;
+			max-height: 70vh;
+		}
+
+		.message {
+			margin: 10px;
+			padding: 10px;
+			border-radius: 5px;
+			max-width: 70%;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.message.system {
+			align-self: center;
+			background-color: #eee;
+		}
+
+		.message.user {
+			align-self: flex-start;
+			background-color: #d4f4ff;
+		}
+
+		.message.assistant {
+			align-self: flex-end;
+			background-color: #cceeff;
+		}
+
+		.input-container {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			margin-top: 20px;
+			width: 80%;
+			max-width: 600px;
+		}
+
+		.input-container input {
+			padding: 10px;
+			border: none;
+			border-radius: 5px;
+			margin-right: 10px;
+			width: 100%;
+			font-size: 16px;
+		}
+
+		.input-container button {
+			padding: 10px;
+			border: none;
+			border-radius: 5px;
+			background-color: #0058a3;
+			color: #fff;
+			font-size: 16px;
+			cursor: pointer;
+			transition: all 0.3s ease-in-out;
+		}
+
+		.input-container button:hover {
+			background-color: #00417a;
+		}
+	</style>
+</head>
+<body>
+	<div class="container" id="message-container">
+		<div class="message system">Welcome to the chat interface</div>
+	</div>
+	<div class="input-container">
+		<input type="text" id="message-input" placeholder="Type your message...">
+		<button id="send-button">Send</button>
+	</div>
+    {{ room_name|json_script:"room-name" }}
+	<script>
+
+	const messageContainer = document.getElementById('message-container');
+const messageInput = document.getElementById('message-input');
+const sendButton = document.getElementById('send-button');
+
+const roomName = JSON.parse(document.getElementById('room-name').textContent);
+
+const chatSocket = new WebSocket(
+    'ws://'
+    + window.location.host
+    + '/ws/chat/'
+    + roomName
+    + '/'
+);
+
+let canSendMessage = true; // 可以发送消息
+
+sendButton.addEventListener('click', sendMessage);
+
+messageInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        sendMessage();
+    }
+});
+
+chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    addMessage('assistant', data.message);
+    canSendMessage = true; // 收到回复消息后可以发送消息
+};
+
+chatSocket.onclose = function(e) {
+    console.error('Chat socket closed unexpectedly');
+};
+
+function sendMessage() {
+    const messageText = messageInput.value;
+    if (!canSendMessage || messageText.trim() === '') {
+        return;
+    }
+
+    addMessage('user', messageText);
+    canSendMessage = false; // 发送消息后不可以再发送消息
+
+    chatSocket.send(JSON.stringify({
+        'message': messageText
+    }));
+
+    messageInput.value = '';
+}
+
+// Add a new message to the container
+function addMessage(role, content) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message', role);
+    messageElement.textContent = content;
+    messageContainer.appendChild(messageElement);
+    messageContainer.scrollTop = messageContainer.scrollHeight;
+}
+
+</script>
+</body>
+</html>

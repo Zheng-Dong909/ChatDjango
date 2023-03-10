@@ -1,0 +1,71 @@
+<!-- chat/templates/chat/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Chat Rooms</title>
+
+    <style>
+       body {
+  background-color: #f2f2f2;
+  text-align: center;
+  padding-top: 50px;
+}
+
+input {
+  padding: 8px 16px;
+  border-radius: 5px;
+  border: none;
+  margin-bottom: 20px;
+}
+
+#room-name-input {
+  width: 400px;
+}
+
+#room-name-submit {
+  background-color: #007bff;
+  color: #fff;
+  cursor: pointer;
+}
+
+#room-name-submit:hover {
+  background-color: #0069d9;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="card-title">Enter a Chat Room</h3>
+                        <div class="input-group">
+                            <input id="room-name-input" type="text" size="100" class="form-control" placeholder="Enter a room name">
+                            <div class="input-group-append">
+                                <button id="room-name-submit" type="button" class="btn btn-primary">Enter</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('#room-name-input').focus();
+        document.querySelector('#room-name-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // enter, return
+                document.querySelector('#room-name-submit').click();
+            }
+        };
+
+        document.querySelector('#room-name-submit').onclick = function(e) {
+            var roomName = document.querySelector('#room-name-input').value;
+            window.location.pathname = roomName + '/';
+        };
+    </script>
+</body>
+</html>
