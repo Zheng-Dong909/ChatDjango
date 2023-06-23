@@ -26,4 +26,8 @@ python -m pip install -U channels["daphne"] #django will be installed automatica
 pip install openai
 python3 manage.py runserver
 ```
+Then, go to http://127.0.0.1:8000/ in the browser and you can see following interface. Type something randomly as the room name, and enter.
+<img src='login.png' width="70%">
 
+Then you will move to the following page, and you can chat with gpt3.5.
+<img src='chat.png' width="70%">
