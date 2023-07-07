@@ -99,69 +99,100 @@
 		<input type="text" id="message-input" placeholder="Type your message...">
 		<button id="send-button">Send</button>
 	</div>
+	<button onclick="startSpeechRecognition()">Audio</button>
+    <div id="transcription"></div>
     {{ room_name|json_script:"room-name" }}
-	<script>
-
+<script>
 	const messageContainer = document.getElementById('message-container');
-const messageInput = document.getElementById('message-input');
-const sendButton = document.getElementById('send-button');
+	const messageInput = document.getElementById('message-input');
+	const sendButton = document.getElementById('send-button');
 
-const roomName = JSON.parse(document.getElementById('room-name').textContent);
+	const roomName = JSON.parse(document.getElementById('room-name').textContent);
 
-const chatSocket = new WebSocket(
-    'ws://'
-    + window.location.host
-    + '/ws/chat/'
-    + roomName
-    + '/'
-);
+	const chatSocket = new WebSocket(
+		'ws://'
+		+ window.location.host
+		+ '/ws/chat/'
+		+ roomName
+		+ '/'
+	);
 
-let canSendMessage = true; // 可以发送消息
+	// 创建 SpeechRecognition 对象
+	const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)();
 
-sendButton.addEventListener('click', sendMessage);
+	// 设置语言
+	recognition.lang = 'en-US';
 
-messageInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        event.preventDefault();
-        sendMessage();
-    }
-});
+	// 设置连续语音识别
+	recognition.continuous = false;
 
-chatSocket.onmessage = function(e) {
-    const data = JSON.parse(e.data);
-    addMessage('assistant', data.message);
-    canSendMessage = true; // 收到回复消息后可以发送消息
-};
+	let transcription = ''; // 保存识别结果的变量
 
-chatSocket.onclose = function(e) {
-    console.error('Chat socket closed unexpectedly');
-};
+	// 当语音识别得到结果时触发事件
+	recognition.onresult = (event) => {
+	const transcript = event.results[event.results.length - 1][0].transcript;
+	transcription += transcript + ' '; // 将识别的文本追加到变量中
+	addMessage('user', transcription);
+	chatSocket.send(JSON.stringify({
+			'message': transcription
+		}));
+	chatSocket.onmessage = function(e) {
+		const data = JSON.parse(e.data);
+		addMessage('assistant', data.message);
+	};
+	};
 
-function sendMessage() {
-    const messageText = messageInput.value;
-    if (!canSendMessage || messageText.trim() === '') {
-        return;
-    }
+	// 开始语音识别
+	function startSpeechRecognition() {
+	recognition.start();
+	}
 
-    addMessage('user', messageText);
-    canSendMessage = false; // 发送消息后不可以再发送消息
+	let canSendMessage = true; // 可以发送消息
 
-    chatSocket.send(JSON.stringify({
-        'message': messageText
-    }));
+	sendButton.addEventListener('click', sendMessage);
 
-    messageInput.value = '';
-}
+	messageInput.addEventListener('keydown', (event) => {
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			sendMessage();
+		}
+	});
 
-// Add a new message to the container
-function addMessage(role, content) {
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message', role);
-    messageElement.textContent = content;
-    messageContainer.appendChild(messageElement);
-    messageContainer.scrollTop = messageContainer.scrollHeight;
-}
+	chatSocket.onmessage = function(e) {
+		const data = JSON.parse(e.data);
+		addMessage('assistant', data.message);
+		canSendMessage = true; // 收到回复消息后可以发送消息
+	};
 
-</script>
+	chatSocket.onclose = function(e) {
+		console.error('Chat socket closed unexpectedly');
+	};
+
+	function sendMessage() {
+		const messageText = messageInput.value;
+		if (!canSendMessage || messageText.trim() === '') {
+			return;
+		}
+
+		addMessage('user', messageText);
+		canSendMessage = false; // 发送消息后不可以再发送消息
+
+		chatSocket.send(JSON.stringify({
+			'message': messageText
+		}));
+
+		messageInput.value = '';
+	}
+
+	// Add a new message to the container
+	function addMessage(role, content) {
+		const messageElement = document.createElement('div');
+		messageElement.classList.add('message', role);
+		messageElement.textContent = content;
+		messageContainer.appendChild(messageElement);
+		messageContainer.scrollTop = messageContainer.scrollHeight;
+	}
+
+	</script>
 </body>
 </html>

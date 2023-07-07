@@ -1,6 +1,6 @@
 import openai
 
-SK = "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"
+SK = "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"
 
 # Load your API key from an environment variable or secret management service
 openai.api_key = SK
